@@ -1,0 +1,18 @@
+{% extends "brands_app/base.html" %}
+{% block content %}
+<h2>Редактировать марку</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">{{ form.storage_choice }}</div>
+    <div class="mb-2">{{ form.name.label_tag }} {{ form.name }}</div>
+    <div class="mb-2">{{ form.country.label_tag }} {{ form.country }}</div>
+    <div class="mb-2">{{ form.founded.label_tag }} {{ form.founded }}</div>
+    <div class="mb-2">{{ form.note.label_tag }} {{ form.note }}</div>
+    <div class="mb-2">{{ form.color.label_tag }} {{ form.color }}</div>
+    {% if form.non_field_errors %}<div class="text-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <button class="btn btn-primary">Сохранить</button>
+ <a href="{% url 'brands_app:list' %}?source=db" class="btn btn-secondary">Отменить</a>
+
+</form>
+{% endblock %}
