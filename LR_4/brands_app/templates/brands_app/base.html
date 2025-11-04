@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Brands</title>
+</head>
+<body>
+<nav>
+    <a href="{% url 'add_brand' %}">Добавить</a> |
+    <a href="{% url 'upload' %}">Загрузить XML</a> |
+    <a href="{% url 'list' %}">Просмотр файлов</a>
+</nav>
+<hr>
+{% block content %}{% endblock %}
+</body>
+</html>

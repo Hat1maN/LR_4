@@ -1,0 +1,12 @@
+{% extends "brands_app/base.html" %}
+{% block content %}
+<h2>Добавить марку</h2>
+{% if message %}
+<p style="color: green">{{ message }}</p>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Сохранить в XML</button>
+</form>
+{% endblock %}
