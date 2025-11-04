@@ -1,0 +1,110 @@
+{% extends "brands_app/base.html" %}
+{% block content %}
+<h2>Список записей ({{ source|upper }})</h2>
+
+{% if source == "db" %}
+  <div class="mb-3">
+    <input id="searchInput" class="form-control" placeholder="Поиск по базе (AJAX)...">
+  </div>
+  <ul id="itemsList" class="list-group">
+    {% for b in items %}
+      <li class="list-group-item d-flex justify-content-between">
+        <div>
+          <strong>{{ b.name }}</strong><br>
+          {{ b.country }} — {{ b.founded }}<br>
+          {{ b.note|truncatechars:120 }}
+        </div>
+        <div>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'brands_app:edit_brand' b.id %}">Редактировать</a>
+          <button class="btn btn-sm btn-outline-danger btn-delete" data-id="{{ b.id }}">Удалить</button>
+        </div>
+      </li>
+    {% empty %}
+      <li class="list-group-item">Список пуст</li>
+    {% endfor %}
+  </ul>
+
+{% else %}
+  <ul class="list-group">
+    {% for rec in items %}
+      <li class="list-group-item">
+        <strong>{{ rec.item.name }}</strong><br>
+        {{ rec.item.country }} — {{ rec.item.founded }}<br>
+        {{ rec.item.note }}
+        <div class="small text-muted">Файл: {{ rec.file }}</div>
+      </li>
+    {% empty %}
+      <li class="list-group-item">XML-файлов нет</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<a href="{% url 'brands_app:add_brand' %}" class="btn btn-secondary mt-3">Добавить новую запись</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      c = c.trim();
+      if (c.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(c.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  let timer;
+  searchInput.addEventListener('input', function() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const q = searchInput.value.trim();
+      fetch(`{% url 'brands_app:ajax_search' %}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('itemsList');
+          list.innerHTML = '';
+          if (data.length === 0) {
+            list.innerHTML = '<li class="list-group-item">Нет записей</li>';
+            return;
+          }
+          data.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between';
+            li.innerHTML = `<div><strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.country)} — ${item.founded || ''}<br>${escapeHtml(item.note || '')}</div>
+              <div>
+                <a class="btn btn-sm btn-outline-primary" href="/edit/${item.id}/">Редактировать</a>
+                <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${item.id}">Удалить</button>
+              </div>`;
+            list.appendChild(li);
+          });
+        })
+    }, 300);
+  });
+}
+
+// делегирование удаления
+document.addEventListener('click', function(e){
+  if (e.target.matches('.btn-delete')) {
+    const id = e.target.getAttribute('data-id');
+    if (!confirm('Удалить запись?')) return;
+    fetch(`{% url 'brands_app:delete_brand' 0 %}`.replace('/0/', `/${id}/`), {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCookie('csrftoken')},
+    }).then(r => r.json()).then(resp => {
+      if (resp.status === 'ok') location.reload();
+      else alert('Ошибка при удалении');
+    })
+  }
+});
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]}); }
+</script>
+{% endblock %}
