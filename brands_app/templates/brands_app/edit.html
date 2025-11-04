@@ -12,7 +12,7 @@
     <div class="mb-2">{{ form.color.label_tag }} {{ form.color }}</div>
     {% if form.non_field_errors %}<div class="text-danger">{{ form.non_field_errors }}</div>{% endif %}
     <button class="btn btn-primary">Сохранить</button>
- <a href="{% url 'brands_app:list' %}?source=db" class="btn btn-secondary">Отменить</a>
+ <a href="{% url 'brands_app:list_items' %}?source=db" class="btn btn-secondary">Отменить</a>
 
 </form>
 {% endblock %}
