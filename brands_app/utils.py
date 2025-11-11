@@ -1,64 +1,75 @@
-import os, uuid
+import os
+import random
+import string
 from lxml import etree
-from django.conf import settings
-from .config import STORAGE_DIR, XML_ROOT_TAG, XML_ITEM_TAG, FIELDS
 
-def storage_path():
-    return os.path.join(settings.BASE_DIR, STORAGE_DIR)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_DIR = os.path.join(BASE_DIR, '..', 'uploaded_files')
+# normalize path to project root/uploaded_files
+UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploaded_files'))
 
-def build_xml(data):
-    root = etree.Element(XML_ROOT_TAG)
-    for d in data:
-        item = etree.SubElement(root, XML_ITEM_TAG)
-        for name, _, _, _ in FIELDS:
-            val = d.get(name, "")
-            child = etree.SubElement(item, name)
-            child.text = str(val) if val is not None else ""
-    return root
+def ensure_upload_dir():
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    return UPLOAD_DIR
 
-def save_xml_tree(root):
-    p = storage_path()
-    os.makedirs(p, exist_ok=True)
-    fname = f"{uuid.uuid4().hex}.xml"
-    full = os.path.join(p, fname)
+def random_name(n=12):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=n)) + '.xml'
+
+def current_xml_file():
+    """
+    If any xml exists in uploaded_files, return the first one (sorted).
+    Otherwise, create a new random file name and return full path.
+    """
+    ensure_upload_dir()
+    files = [f for f in os.listdir(UPLOAD_DIR) if f.lower().endswith('.xml')]
+    files.sort()
+    if files:
+        return os.path.join(UPLOAD_DIR, files[0])
+    # create a new random file
+    fname = random_name()
+    path = os.path.join(UPLOAD_DIR, fname)
+    # create root element
+    root = etree.Element('brands')
     tree = etree.ElementTree(root)
-    tree.write(full, pretty_print=True, xml_declaration=True, encoding="utf-8")
-    return fname
+    tree.write(path, pretty_print=True, xml_declaration=True, encoding='utf-8')
+    return path
 
-def validate_xml_tree(tree):
+def add_brand_to_xml(data: dict):
+    """
+    data: dict with keys name,country,founded,note,color
+    Append new <brand> element to current xml file.
+    """
+    path = current_xml_file()
+    parser = etree.XMLParser(remove_blank_text=True)
+    tree = etree.parse(path, parser)
     root = tree.getroot()
-    if root.tag != XML_ROOT_TAG:
-        return False, "Неверный корневой тег"
-    for item in root.findall(XML_ITEM_TAG):
-        for name, _, required, ftype in FIELDS:
-            el = item.find(name)
-            if required and (el is None or (el.text or "").strip() == ""):
-                return False, f"Отсутствует обязательное поле {name}"
-            if el is not None and ftype == "int" and el.text and not el.text.strip().isdigit():
-                return False, f"Поле {name} должно быть числом"
-    return True, "OK"
+    br = etree.SubElement(root, 'brand')
+    for k in ('name', 'country', 'founded', 'note', 'color'):
+        v = data.get(k) if data.get(k) is not None else ''
+        child = etree.SubElement(br, k)
+        child.text = str(v)
+    tree.write(path, pretty_print=True, xml_declaration=True, encoding='utf-8')
+    return path
 
 def read_all_xml():
-    p = storage_path()
-    if not os.path.isdir(p):
-        return []
-    res = []
-    for fname in os.listdir(p):
-        if not fname.lower().endswith(".xml"):
-            continue
-        full = os.path.join(p, fname)
+    """
+    Return list of dicts with keys {item: {fields...}, file: filename}
+    """
+    ensure_upload_dir()
+    files = [f for f in os.listdir(UPLOAD_DIR) if f.lower().endswith('.xml')]
+    files.sort()
+    result = []
+    parser = etree.XMLParser(remove_blank_text=True)
+    for fname in files:
+        full = os.path.join(UPLOAD_DIR, fname)
         try:
-            tree = etree.parse(full)
-            ok, _ = validate_xml_tree(tree)
-            if not ok:
-                continue
+            tree = etree.parse(full, parser)
             root = tree.getroot()
-            for item in root.findall(XML_ITEM_TAG):
-                d = {}
-                for name, _, _, _ in FIELDS:
-                    el = item.find(name)
-                    d[name] = (el.text or "").strip() if el is not None else ""
-                res.append({"file": fname, "item": d})
+            for b in root.findall('brand'):
+                item = {}
+                for child in b:
+                    item[child.tag] = child.text
+                result.append({'item': item, 'file': fname})
         except Exception:
             continue
-    return res
+    return result

@@ -2,35 +2,18 @@
 {% block content %}
 <h2>Добавить марку</h2>
 
-{% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
-{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-
 <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-        {{ form.storage_choice }}
-    </div>
-    <div class="mb-2">
-        {{ form.name.label_tag }} {{ form.name }}
-        {% for err in form.name.errors %}<div class="text-danger">{{ err }}</div>{% endfor %}
-    </div>
-    <div class="mb-2">
-        {{ form.country.label_tag }} {{ form.country }}
-    </div>
-    <div class="mb-2">
-        {{ form.founded.label_tag }} {{ form.founded }}
-    </div>
-    <div class="mb-2">
-        {{ form.note.label_tag }} {{ form.note }}
-    </div>
-    <div class="mb-2">
-        {{ form.color.label_tag }} {{ form.color }}
-    </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
+  {% csrf_token %}
+  <div class="mb-3">{{ form.storage_choice }}</div>
+  <div class="mb-2">{{ form.name.label_tag }} {{ form.name }}</div>
+  <div class="mb-2">{{ form.country.label_tag }} {{ form.country }}</div>
+  <div class="mb-2">{{ form.founded.label_tag }} {{ form.founded }}</div>
+  <div class="mb-2">{{ form.note.label_tag }} {{ form.note }}</div>
+  <div class="mb-2">{{ form.color.label_tag }} {{ form.color }}</div>
+  <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
 
 <hr>
 <a class="btn btn-outline-secondary" href="{% url 'brands_app:list_items' %}?source=xml">Показать XML записи</a>
 <a class="btn btn-outline-secondary" href="{% url 'brands_app:list_items' %}?source=db">Показать записи из БД</a>
-
 {% endblock %}
