@@ -27,8 +27,6 @@ def add_brand(request):
                     name__iexact=name,
                     country__iexact=country,
                     founded=founded,
-                    note__iexact=note,
-                    color__iexact=color
                 ).exists()
 
                 if exists:

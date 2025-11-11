@@ -13,7 +13,7 @@
 
 1. Клонировать репозиторий или скачать файлы:
 ```bash
-git clone <https://github.com/Hat1maN/LR_3>
+git clone <https://github.com/Hat1maN/LR_4>
 cd <LR4>
 python -m venv .venv
 .venv\Scripts\activate      # Windows
