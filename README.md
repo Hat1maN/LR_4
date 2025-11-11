@@ -14,7 +14,7 @@
 1. Клонировать репозиторий или скачать файлы:
 ```bash
 git clone <https://github.com/Hat1maN/LR_3>
-cd <LR3>
+cd <LR4>
 python -m venv .venv
 .venv\Scripts\activate      # Windows
 source .venv/bin/activate   # Linux/macOS

@@ -2,11 +2,49 @@ import os
 import random
 import string
 from lxml import etree
+import xml.etree.ElementTree as ET
+from django.conf import settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(BASE_DIR, '..', 'uploaded_files')
 # normalize path to project root/uploaded_files
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploaded_files'))
+
+def save_to_xml(data):
+    """Сохраняет запись в общий XML-файл (с уникальным именем)"""
+    # Папка для сохранения XML
+    folder_path = os.path.join(settings.BASE_DIR, "uploaded_files")
+    os.makedirs(folder_path, exist_ok=True)
+
+    # Случайное имя файла, например brands_a9K3z.xml
+    random_suffix = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+    file_path = os.path.join(folder_path, f"brands_{random_suffix}.xml")
+
+    # Создание корня XML, если файл новый
+    root = ET.Element("brands")
+
+    # Если есть существующий файл brands.xml — читаем старые записи
+    existing_files = [f for f in os.listdir(folder_path) if f.startswith("brands_") and f.endswith(".xml")]
+    if existing_files:
+        last_file = os.path.join(folder_path, existing_files[-1])
+        try:
+            tree = ET.parse(last_file)
+            root = tree.getroot()
+            file_path = last_file  # дописываем в последний файл
+        except ET.ParseError:
+            pass
+
+    # Добавляем новую запись
+    brand_el = ET.SubElement(root, "brand")
+    for key, value in data.items():
+        child = ET.SubElement(brand_el, key)
+        child.text = str(value)
+
+    # Сохраняем XML
+    tree = ET.ElementTree(root)
+    tree.write(file_path, encoding="utf-8", xml_declaration=True)
+
+    return file_path
 
 def ensure_upload_dir():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
