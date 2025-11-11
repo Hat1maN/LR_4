@@ -17,3 +17,9 @@
 <a class="btn btn-outline-secondary" href="{% url 'brands_app:list_items' %}?source=xml">Показать XML записи</a>
 <a class="btn btn-outline-secondary" href="{% url 'brands_app:list_items' %}?source=db">Показать записи из БД</a>
 {% endblock %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}

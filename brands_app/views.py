@@ -11,36 +11,44 @@ from django.db import models as dj_models
 def add_brand(request):
     if request.method == "POST":
         form = BrandModelForm(request.POST)
+
         if form.is_valid():
-            storage = form.cleaned_data.get('storage_choice', 'db')
+            storage = form.cleaned_data['storage_choice']
 
-            data = {
-                'name': form.cleaned_data.get('name','').strip(),
-                'country': form.cleaned_data.get('country','').strip(),
-                'founded': form.cleaned_data.get('founded'),
-                'note': form.cleaned_data.get('note','').strip(),
-                'color': form.cleaned_data.get('color','').strip(),
-            }
+            if storage == 'db':
+                name = form.cleaned_data['name'].strip()
+                country = form.cleaned_data['country'].strip()
+                founded = form.cleaned_data['founded']
+                note = form.cleaned_data['note'].strip()
+                color = form.cleaned_data['color'].strip()
 
-            if storage == 'xml':
-                path = utils.add_brand_to_xml(data)
-                messages.success(request, f"Запись добавлена в XML ({path})")
-                return redirect(reverse('brands_app:list_items') + '?source=xml')
-            else:
-                # consider duplicates by name+country+founded (case-insensitive)
+                # Проверяем, есть ли дубль в БД
                 exists = Brand.objects.filter(
-                    name__iexact=data['name'],
-                    country__iexact=data['country'],
-                    founded=data['founded']
+                    name__iexact=name,
+                    country__iexact=country,
+                    founded=founded,
+                    note__iexact=note,
+                    color__iexact=color
                 ).exists()
+
                 if exists:
-                    messages.error(request, "Такая запись уже существует в базе данных.")
+                    messages.error(request, "Такая запись уже существует в базе данных!")
                     return render(request, "brands_app/add_brand.html", {"form": form})
-                Brand.objects.create(**data)
-                messages.success(request, "Запись успешно добавлена в базу данных.")
-                return redirect(reverse('brands_app:list_items') + '?source=db')
+
+                form.save()
+                messages.success(request, "Запись успешно добавлена в базу данных!")
+                return redirect("brands_app:list_items")
+
+            elif storage == 'xml':
+                # сохранение в xml
+                from .utils import save_to_xml
+                save_to_xml(form.cleaned_data)
+                messages.success(request, "Запись успешно сохранена в XML!")
+                return redirect("brands_app:list_items")
+
     else:
         form = BrandModelForm()
+
     return render(request, "brands_app/add_brand.html", {"form": form})
 
 def upload_file(request):
